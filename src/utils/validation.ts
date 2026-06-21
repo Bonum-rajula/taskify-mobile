@@ -29,6 +29,7 @@ const passwordStrictSchema = z
 // These schemas govern the exact shape of our UI forms.
 // ============================================================================
 
+// --- Auth Schemas ---
 export const loginSchema = z.object({
   email: emailSchema,
   password: passwordLoginSchema,
@@ -40,11 +41,27 @@ export const registerSchema = z.object({
   password: passwordStrictSchema,
 });
 
+// --- Profile Schemas ---
+export const updateProfileSchema = z.object({
+  name: z.string().min(1, 'Name is required').trim(),
+  email: emailSchema,
+});
+
+export const updatePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: passwordStrictSchema,
+}).refine((data) => data.currentPassword !== data.newPassword, {
+  // Senior Touch: Prevent users from "changing" their password to their current one
+  message: "New password must be different from your current password",
+  path: ["newPassword"], // This attaches the error message directly to the newPassword input field
+});
+
 // ============================================================================
 // TYPE INFERENCE (SOLID Principle)
 // We extract the TypeScript interfaces directly from the schemas.
-// Our UI components will use these types, guaranteeing they always match the validation.
 // ============================================================================
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
 export type RegisterFormValues = z.infer<typeof registerSchema>;
+export type UpdateProfileFormValues = z.infer<typeof updateProfileSchema>;
+export type UpdatePasswordFormValues = z.infer<typeof updatePasswordSchema>;

@@ -7,15 +7,19 @@ export const authApi = {
     const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
     return response.data;
   },
-  
+
   register: async (data: { email: string; password: string; name: string }) => {
     const response = await apiClient.post<AuthResponse>('/auth/register', data);
     return response.data;
   },
 
-  logout: async () => {
-    // The Spearhead backend requires this to invalidate the token version
-    const response = await apiClient.post('/auth/logout');
+  socialLogin: async (payload: { provider: string; token: string }) => {
+    const response = await apiClient.post<AuthResponse>('/auth/social', payload);
     return response.data;
-  }
+  },
+
+  logout: async () => {
+    const response = await apiClient.post('/logout');
+    return response.data;
+  },
 };
