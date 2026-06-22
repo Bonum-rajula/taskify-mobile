@@ -18,6 +18,7 @@ import { registerSchema } from '@/utils/validation';
 import { authApi } from '@/api/auth';
 import { useAuthStore } from '@/store/authStore';
 import { setSecureItem, STORE_KEYS } from '@/utils/secureStore';
+import { SocialAuth } from '@/src/components/auth/SocialAuth';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -148,6 +149,8 @@ export default function RegisterScreen() {
               </Typography>
             </Link>
           </View>
+
+          <SocialAuth />
 
         </ScrollView>
       </DismissKeyboard>

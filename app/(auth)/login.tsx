@@ -17,6 +17,7 @@ import { loginSchema } from '@/utils/validation';
 import { authApi } from '@/api/auth';
 import { useAuthStore } from '@/store/authStore';
 import { setSecureItem, STORE_KEYS } from '@/utils/secureStore';
+import { SocialAuth } from '@/src/components/auth/SocialAuth';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -132,6 +133,8 @@ export default function LoginScreen() {
               </Typography>
             </Link>
           </View>
+
+          <SocialAuth />
 
         </View>
       </DismissKeyboard>
