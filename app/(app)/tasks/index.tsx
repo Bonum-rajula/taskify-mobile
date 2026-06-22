@@ -2,11 +2,17 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, FlatList, Pressable, ActivityIndicator, RefreshControl, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Plus } from 'lucide-react-native';
+import { Plus, Mail } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { TaskCard } from '@/components/tasks/TaskCard';
 import { SwipeableRow } from '@/components/tasks/SwipeableRow';
 import { Typography } from '@/components/ui/Typography';
+import { Button } from '@/components/ui/Button';
+
 import { useTasksQuery, useToggleTaskMutation, useDeleteTaskMutation } from '@/hooks/queries/useTasks';
+import { emailDigestService } from '@/utils/emailDigest';
+import { useAuthStore } from '@/store/authStore';
 import { theme } from '@/constants/theme';
 import { Task } from '@/types/models';
 
@@ -15,10 +21,18 @@ type TabState = 'pending' | 'completed';
 export default function TasksDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabState>('pending');
+  
+  const insets = useSafeAreaInsets();
 
   const { data: tasks = [], isLoading, isRefetching, refetch } = useTasksQuery();
+  const { user } = useAuthStore();
   const toggleMutation = useToggleTaskMutation();
   const deleteMutation = useDeleteTaskMutation();
+
+  const handleSendEmailDigest = async () => {
+    if (!user) return;
+    await emailDigestService.sendDigest(user.email, user.name, tasks);
+  };
 
   const filteredTasks = tasks.filter((task) =>
     activeTab === 'completed' ? task.completed : !task.completed
@@ -27,7 +41,6 @@ export default function TasksDashboard() {
   const handleToggle = (id: string, completed: boolean) => toggleMutation.mutate({ id, completed });
   const handleDelete = (id: string) => deleteMutation.mutate(id);
 
-  // ROUTING INSTEAD OF LOCAL STATE
   const handleEdit = (task: Task) => router.push(`/(app)/tasks/${task.id}`);
   const openCreateModal = () => router.push('/(app)/tasks/new');
 
@@ -49,8 +62,21 @@ export default function TasksDashboard() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Typography variant="h1" style={styles.headerTitle}>Your Tasks</Typography>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, theme.spacing.xl) }]}>
+        <View style={styles.titleRow}>
+          <Typography variant="h1" style={styles.headerTitle}>Your Tasks</Typography>
+          
+          <Button
+            title="Digest"
+            variant="outline"
+            size="sm"
+            icon={<Mail size={16} color={theme.colors.primary} />}
+            onPress={handleSendEmailDigest}
+            disabled={isLoading}
+            style={styles.digestButton}
+          />
+        </View>
+
         <View style={styles.segmentedControl}>
           <Pressable
             style={[styles.tab, activeTab === 'pending' && styles.activeTab]}
@@ -117,15 +143,22 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   header: {
-    paddingTop: Platform.OS === 'ios' ? 60 : theme.spacing.xl, // Safe area accommodation
     paddingHorizontal: theme.spacing.md,
     paddingBottom: theme.spacing.md,
     backgroundColor: theme.colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },
-  headerTitle: {
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: theme.spacing.md,
+  },
+  headerTitle: {},
+  digestButton: {
+    borderColor: theme.colors.border,
+    paddingHorizontal: theme.spacing.md,
   },
   
   // Segmented Control Styles
@@ -153,7 +186,7 @@ const styles = StyleSheet.create({
   // List Styles
   listContent: {
     flexGrow: 1,
-    paddingBottom: 100, // Make room for the FAB so last item isn't covered
+    paddingBottom: 100, 
   },
   emptyContainer: {
     flex: 1,
@@ -168,7 +201,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // Floating Action Button
   fab: {
     position: 'absolute',
     bottom: theme.spacing.xl,

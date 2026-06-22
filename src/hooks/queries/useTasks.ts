@@ -2,11 +2,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tasksApi, CreateTaskPayload, UpdateTaskPayload } from '@/api/tasks';
 import { Task } from '@/types/models';
+import { notificationService } from '@/utils/notifications';
 
-// ============================================================================
-// SINGLE CHOICE PRINCIPLE (SCR)
-// The Master Query Key. Every single cache read/write references this exact array.
-// ============================================================================
+
 export const TASK_QUERY_KEY = ['tasks'] as const;
 
 /**
@@ -27,9 +25,13 @@ export function useCreateTaskMutation() {
 
   return useMutation({
     mutationFn: (payload: CreateTaskPayload) => tasksApi.createTask(payload),
-    onSuccess: () => {
+    onSuccess: (newTask) => {
       // Instantly marks the cached task list as stale, forcing UI synchronization
       queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
+
+      if (newTask.dueDate) {
+        notificationService.scheduleTaskReminder(newTask.id, newTask.title, newTask.dueDate);
+      }
     },
   });
 }
@@ -43,8 +45,14 @@ export function useUpdateTaskMutation() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: UpdateTaskPayload }) =>
       tasksApi.updateTask(id, payload),
-    onSuccess: () => {
+    onSuccess: (updatedTask) => {
       queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
+
+      if (updatedTask.dueDate && !updatedTask.completed) {
+        notificationService.scheduleTaskReminder(updatedTask.id, updatedTask.title, updatedTask.dueDate);
+      } else {
+        notificationService.cancelTaskReminder(updatedTask.id);
+      }
     },
   });
 }
@@ -72,8 +80,11 @@ export function useDeleteTaskMutation() {
 
   return useMutation({
     mutationFn: (id: string) => tasksApi.deleteTask(id),
-    onSuccess: () => {
+    onSuccess: (_, deletedTaskId) => {
       queryClient.invalidateQueries({ queryKey: TASK_QUERY_KEY });
+
+      notificationService.cancelTaskReminder(deletedTaskId);
     },
   });
 }
+

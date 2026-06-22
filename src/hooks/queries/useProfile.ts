@@ -22,7 +22,6 @@ export function useProfileQuery() {
  * 2. Updates the profile and instantly syncs the new data into the global Zustand store.
  */
 
-// Inside src/hooks/queries/useProfile.ts
 
 export function useUpdateProfileMutation() {
   const queryClient = useQueryClient();
@@ -30,12 +29,10 @@ export function useUpdateProfileMutation() {
   return useMutation({
     mutationFn: (payload: UpdateProfilePayload) => userApi.updateProfile(payload),
     
-    // Notice the 2nd parameter: 'variables' (The exact DTO the user just submitted)
     onSuccess: (serverReceipt, variables) => {
       const currentUser = useAuthStore.getState().user;
       if (!currentUser) return;
 
-      // Forcibly stamp the submitted form variables over the existing user object
       const optimisticUser = {
         ...currentUser,
         ...variables, 

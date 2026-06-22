@@ -1,37 +1,82 @@
 // app/_layout.tsx
 import React, { useEffect } from 'react';
-import { Stack, useRouter, useSegments } from 'expo-router';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Slot, useRouter, useSegments } from 'expo-router';
+import { QueryClient } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
+import { asyncStoragePersister } from '@/utils/storagePersister';
+import { useOfflineManager } from '@/hooks/useOfflineManager';
 import { useAuthStore } from '@/store/authStore';
 
-// Initialize the TanStack Query Client outside the component
-const queryClient = new QueryClient();
+import { View, ActivityIndicator } from 'react-native';
+import { theme } from '@/constants/theme';
 
-export default function RootLayout() {
-  const { isAuthenticated } = useAuthStore();
+// ============================================================================
+// OFFLINE-FIRST QUERY CLIENT (Bonus 3)
+// ============================================================================
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      gcTime: 1000 * 60 * 60 * 24,
+      staleTime: 1000 * 60 * 2,
+      networkMode: 'offlineFirst',
+    },
+    mutations: {
+      networkMode: 'offlineFirst', 
+    },
+  },
+});
+
+// ============================================================================
+// GLOBAL AUTH GUARD (SOC Principle)
+// ============================================================================
+function InitialLayout() {
+  const { isAuthenticated, isHydrated } = useAuthStore();
   const segments = useSegments();
   const router = useRouter();
 
+  // Initialize the offline network listener daemon
+  useOfflineManager();
+
   useEffect(() => {
-    // Determine if the user is currently inside the (auth) route group
+    if (!isHydrated) return;
+
     const inAuthGroup = segments[0] === '(auth)';
 
     if (!isAuthenticated && !inAuthGroup) {
-      // If they are NOT logged in and try to access a protected route,
-      // instantly kick them back to the login screen.
       router.replace('/(auth)/login');
     } else if (isAuthenticated && inAuthGroup) {
-      // If they ARE logged in but somehow sitting on the login/register screen,
-      // push them seamlessly into the main application.
       router.replace('/(app)/tasks');
     }
-  }, [isAuthenticated, segments]);
+  }, [isAuthenticated, isHydrated, segments]);
 
+  if (!isHydrated) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
+  return <Slot />;
+}
+
+// ============================================================================
+// ROOT APP EXPORT
+// ============================================================================
+export default function RootLayout() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Stack screenOptions={{ headerShown: false }}>
-        {/* We let Expo Router automatically discover the (auth) and (app) groups */}
-      </Stack>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{
+          persister: asyncStoragePersister,
+          maxAge: 1000 * 60 * 60 * 24,
+        }}
+      >
+        <InitialLayout />
+      </PersistQueryClientProvider>
+    </GestureHandlerRootView>
   );
 }

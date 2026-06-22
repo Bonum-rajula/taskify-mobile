@@ -46,7 +46,7 @@ export interface Task {
   title: string;
   description: string;
   completed: boolean;
-  dueDate: string | null; // ISO 8601 string
+  dueDate: string | null;
   createdAt: string;
   updatedAt: string;
 }

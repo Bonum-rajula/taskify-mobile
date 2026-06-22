@@ -1,5 +1,5 @@
 // app/(app)/profile/index.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,7 +9,8 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
-import { User, LogOut, ShieldAlert, ChevronDown, ChevronUp } from 'lucide-react-native';
+import { User, Key, LogOut, ShieldAlert } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Typography } from '@/components/ui/Typography';
 import { Button } from '@/components/ui/Button';
@@ -30,6 +31,7 @@ import { theme } from '@/constants/theme';
 export default function ProfileScreen() {
   const { user, signOut } = useAuthStore();
   const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
 
   // ============================================================================
   // MUTATIONS
@@ -60,9 +62,20 @@ export default function ProfileScreen() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // ============================================================================
+  // STORE DRIFT PROTECTOR (Senior Fix)
+  // ============================================================================
+  // Keeps local form state strictly locked to the global Zustand store changes
+  useEffect(() => {
+    if (user) {
+      setName(user.name);
+      setEmail(user.email);
+    }
+  }, [user]);
+
+  // ============================================================================
   // HELPER FUNCTIONS
   // ============================================================================
-  const getInitials = (fullName: string) => {
+  const getInitials = (fullName?: string) => {
     if (!fullName) return '?';
     return fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
@@ -95,7 +108,7 @@ export default function ProfileScreen() {
     }
   };
 
-  // ACTION 4.1: Password Update (YAGNI applied for OAuth)
+  // ACTION 4.1: Password Update
   const handleUpdatePassword = async () => {
     setPasswordErrors({});
     const validation = updatePasswordSchema.safeParse({ currentPassword, newPassword });
@@ -114,7 +127,6 @@ export default function ProfileScreen() {
       setCurrentPassword('');
       setNewPassword('');
       setIsEditingPassword(false);
-      // Optional: Show a success toast here
     } catch (err: any) {
       setPasswordErrors({ form: err.response?.data?.error || 'Failed to update password.' });
     }
@@ -123,19 +135,15 @@ export default function ProfileScreen() {
   // ACTION 4.2: The Absolute Logout Sequence
   const handleLogout = async () => {
     try {
-      // 1. Destroy backend Express session (fire and forget, even if network drops, we proceed to purge local)
-      await authApi.logout().catch(() => console.log('Backend session already invalid or unreachable.'));
+      await authApi.logout().catch(() => console.log('Backend session already invalid.'));
     } finally {
-      // 2. Shred the native keychain
       await clearAuthTokens();
-      // 3. Wipe global cache to prevent data bleeding
       queryClient.clear();
-      // 4. Update Zustand (This triggers the Auth Guard to completely unmount the layout tree)
       signOut();
     }
   };
 
-  // ACTION 4.3: The Critical Deletion Flow
+  // ACTION 4.3: Deletion Flow
   const handleDeleteAccount = async () => {
     setDeleteError(null);
     
@@ -153,7 +161,6 @@ export default function ProfileScreen() {
       const payload = isLocalAuth ? deleteInput : undefined;
       await deleteAccountMutation.mutateAsync(payload);
       
-      // Post-deletion Absolute Purge
       await clearAuthTokens();
       queryClient.clear();
       signOut();
@@ -163,31 +170,28 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView 
+      style={styles.container} 
+      contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top, theme.spacing.xl) }]}
+      keyboardShouldPersistTaps="handled"
+    >
       
       {/* 1. METADATA READOUT & AVATAR */}
       <View style={styles.profileHeader}>
         <View style={styles.avatarContainer}>
-          {user?.avatarUrl ? (
-             // Replace with Next/Expo Image if available
-            <View style={styles.avatarPlaceholder}>
-               <Typography variant="h2" color={theme.colors.surface}>IMG</Typography>
-            </View>
-          ) : (
-            <View style={styles.avatarFallback}>
-              <Typography variant="h1" color={theme.colors.primary}>
-                {getInitials(user?.name || '')}
-              </Typography>
-            </View>
-          )}
+          <View style={styles.avatarFallback}>
+            <Typography variant="h1" color={theme.colors.primary}>
+              {getInitials(user?.name)}
+            </Typography>
+          </View>
         </View>
         <Typography variant="h1">{user?.name}</Typography>
         <Typography variant="body" color={theme.colors.textMuted}>{user?.email}</Typography>
         
         <View style={styles.authBadge}>
           <User color={theme.colors.primary} size={14} />
-          <Typography variant="caption" color={theme.colors.primary} style={{ marginLeft: 4, textTransform: 'capitalize' }}>
-            {user?.authProvider || user?.authProvider || 'Unknown'} Account
+          <Typography variant="caption" color={theme.colors.primary} style={styles.badgeText}>
+            {user?.authProvider || 'Local'} Account
           </Typography>
         </View>
       </View>
@@ -197,8 +201,8 @@ export default function ProfileScreen() {
         <Button 
           title="Edit Profile" 
           variant="secondary" 
+          icon={<User size={18} color={theme.colors.primary} />}
           onPress={() => setIsEditingProfile(!isEditingProfile)}
-          style={styles.accordionToggle}
         />
         {isEditingProfile && (
           <View style={styles.accordionContent}>
@@ -234,8 +238,8 @@ export default function ProfileScreen() {
           <Button 
             title="Update Password" 
             variant="secondary" 
+            icon={<Key size={18} color={theme.colors.primary} />}
             onPress={() => setIsEditingPassword(!isEditingPassword)}
-            style={styles.accordionToggle}
           />
           {isEditingPassword && (
             <View style={styles.accordionContent}>
@@ -267,12 +271,12 @@ export default function ProfileScreen() {
       )}
 
       {/* 4. DANGER ZONE */}
-      <View style={[styles.section, styles.dangerZone]}>
+      <View style={styles.dangerZone}>
         <Button 
           title="Log Out" 
-          variant="ghost" 
+          variant="outline" 
+          icon={<LogOut size={18} color={theme.colors.primary} />}
           onPress={handleLogout} 
-          style={styles.logoutButton}
         />
         <Button 
           title="Delete Account" 
@@ -319,7 +323,7 @@ export default function ProfileScreen() {
                   title="Permanently Delete" 
                   onPress={handleDeleteAccount} 
                   isLoading={deleteAccountMutation.isPending}
-                  style={{ ...styles.deleteButton, flex: 1 }} 
+                  style={[styles.deleteButton, { flex: 1 }]} 
                 />
               </View>
             </View>
@@ -338,8 +342,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: theme.spacing.xl,
-    paddingTop: Platform.OS === 'ios' ? 80 : theme.spacing.xl * 2,
-    paddingBottom: 120, // Tab bar clearance
+    paddingBottom: 120,
   },
   profileHeader: {
     alignItems: 'center',
@@ -352,19 +355,11 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: `${theme.colors.primary}20`, // 20% opacity of primary
+    backgroundColor: `${theme.colors.primary}20`,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
     borderColor: theme.colors.primary,
-  },
-  avatarPlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: theme.colors.textMuted,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   authBadge: {
     flexDirection: 'row',
@@ -375,11 +370,12 @@ const styles = StyleSheet.create({
     borderRadius: theme.radii.full,
     marginTop: theme.spacing.sm,
   },
+  badgeText: {
+    marginLeft: 4,
+    textTransform: 'capitalize',
+  },
   section: {
     marginBottom: theme.spacing.lg,
-  },
-  accordionToggle: {
-    justifyContent: 'space-between',
   },
   accordionContent: {
     backgroundColor: theme.colors.surface,
@@ -393,9 +389,6 @@ const styles = StyleSheet.create({
   dangerZone: {
     marginTop: theme.spacing.xl,
     gap: theme.spacing.md,
-  },
-  logoutButton: {
-    borderColor: theme.colors.border,
   },
   deleteButton: {
     backgroundColor: theme.colors.error,

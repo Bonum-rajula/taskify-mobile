@@ -11,12 +11,10 @@ const emailSchema = z
   .min(1, 'Email is required')
   .email('Please enter a valid email address');
 
-// For login, we just need to know they typed *something*. The backend handles the rest.
 const passwordLoginSchema = z
   .string()
   .min(1, 'Password is required');
 
-// For registration, we strictly enforce the Spearhead backend requirements.
 const passwordStrictSchema = z
   .string()
   .min(8, 'Password must be at least 8 characters long')
@@ -51,9 +49,8 @@ export const updatePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
   newPassword: passwordStrictSchema,
 }).refine((data) => data.currentPassword !== data.newPassword, {
-  // Senior Touch: Prevent users from "changing" their password to their current one
   message: "New password must be different from your current password",
-  path: ["newPassword"], // This attaches the error message directly to the newPassword input field
+  path: ["newPassword"],
 });
 
 // ============================================================================
