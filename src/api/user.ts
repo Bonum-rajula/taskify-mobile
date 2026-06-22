@@ -52,7 +52,6 @@ export const userApi = {
    * Target: DELETE /api/account
    */
   deleteAccount: async (password?: string): Promise<void> => {
-    // Axios strictly requires DELETE request bodies to be wrapped inside the 'data' property.
     await apiClient.delete('/user/account', {
       data: password ? { password } : {},
     });
