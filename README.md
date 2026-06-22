@@ -241,4 +241,4 @@ Taskify Mobile is built to demonstrate production-minded mobile engineering with
 
 ## Contact
 
-Video link to the demo: [text](https://drive.google.com/file/d/1FfhiN7sivxA-QsWVwn3c-u8xJw4yeOOR/view?usp=sharing)
+Video link to the demo: [https://drive.google.com/file/d/1FfhiN7sivxA-QsWVwn3c-u8xJw4yeOOR/view?usp=sharing](https://drive.google.com/file/d/1FfhiN7sivxA-QsWVwn3c-u8xJw4yeOOR/view?usp=sharing)
