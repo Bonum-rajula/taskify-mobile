@@ -3,9 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userApi, UpdateProfilePayload, UpdatePasswordPayload } from '@/api/user';
 import { useAuthStore } from '@/store/authStore';
 
-// ============================================================================
-// SINGLE SOURCE OF TRUTH (SCR)
-// ============================================================================
+
 export const PROFILE_QUERY_KEY = ['profile'] as const;
 
 /**
@@ -67,8 +65,7 @@ export function useDeleteAccountMutation() {
   return useMutation({
     mutationFn: (password?: string) => userApi.deleteAccount(password),
     onSuccess: () => {
-      // Security Polish: Wipe the ENTIRE TanStack Query cache (including all tasks and profiles)
-      // to ensure no sensitive data remains in memory after deletion.
+
       queryClient.clear();
     },
   });

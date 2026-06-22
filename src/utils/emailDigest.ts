@@ -29,7 +29,7 @@ export const emailDigestService = {
           recipients: [userEmail],
           subject,
           body: htmlBody,
-          isHtml: true, // Render our rich HTML layout
+          isHtml: true,
         });
         return result.status === 'sent';
       } catch (err) {

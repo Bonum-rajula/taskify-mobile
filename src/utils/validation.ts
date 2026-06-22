@@ -1,11 +1,6 @@
 // src/utils/validation.ts
 import { z } from 'zod';
 
-// ============================================================================
-// PRIMITIVES (DRY Principle)
-// We define these once so they can be reused across Login, Register, and Profile screens.
-// ============================================================================
-
 const emailSchema = z
   .string()
   .min(1, 'Email is required')
@@ -22,10 +17,6 @@ const passwordStrictSchema = z
   .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
   .regex(/[0-9]/, 'Password must contain at least one number');
 
-// ============================================================================
-// FORM SCHEMAS (SOC Principle)
-// These schemas govern the exact shape of our UI forms.
-// ============================================================================
 
 // --- Auth Schemas ---
 export const loginSchema = z.object({
@@ -53,10 +44,6 @@ export const updatePasswordSchema = z.object({
   path: ["newPassword"],
 });
 
-// ============================================================================
-// TYPE INFERENCE (SOLID Principle)
-// We extract the TypeScript interfaces directly from the schemas.
-// ============================================================================
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
 export type RegisterFormValues = z.infer<typeof registerSchema>;

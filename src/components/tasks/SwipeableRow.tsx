@@ -2,14 +2,14 @@
 import React, { useRef } from 'react';
 import { View, StyleSheet, Platform, Pressable } from 'react-native';
 import Swipeable, { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
-import { Check, Trash2, Undo2 } from 'lucide-react-native'; // Added Undo2
+import { Check, Trash2, Undo2 } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 
 interface SwipeableRowProps {
   children: React.ReactNode;
   onToggle: () => void;
   onDelete: () => void;
-  isCompleted: boolean; // NEW: Tell the row what state it's in
+  isCompleted: boolean;
 }
 
 export function SwipeableRow({ children, onToggle, onDelete, isCompleted }: SwipeableRowProps) {

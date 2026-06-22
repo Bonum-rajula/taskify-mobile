@@ -3,11 +3,10 @@
 /**
  * Supported authentication providers mapped directly from the backend database schema.
  */
-export type AuthProvider = 'local' | 'google' | 'github';
+export type AuthProvider = 'local' | 'google' | 'apple'| 'github';
 
 /**
  * The core User entity as returned by the backend's `sanitizeUser` utility.
- * Notice the conversion from snake_case (backend DB) to camelCase (our frontend standard).
  */
 export interface User {
   id: string;
@@ -31,15 +30,13 @@ export interface AuthResponse {
 
 /**
  * Standardized error structure returned by `src/middleware/errorHandler.js`
- * This ensures we never crash trying to read `error.message` when the backend sends `error.error`.
  */
 export interface ApiErrorResponse {
   error: string;
 }
 
 /**
- * (Forward-thinking) The Task entity as returned by `formatTask` in the backend.
- * We include this now so we don't have to return to this file later.
+ * The Task entity as returned by `formatTask` in the backend.
  */
 export interface Task {
   id: string;

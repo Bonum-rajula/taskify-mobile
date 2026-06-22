@@ -16,7 +16,7 @@ export function Typography({
   children,
   ...props
 }: TypographyProps) {
-  // Extract the base styles from our theme dictionary
+  
   const baseStyle = theme.typography[variant];
 
   return (
@@ -24,8 +24,8 @@ export function Typography({
       style={[
         baseStyle,
         { textAlign: align },
-        color && { color }, // Override color if explicitly passed
-        style,              // Allow local overrides when absolutely necessary
+        color && { color }, 
+        style,             
       ]}
       {...props}
     >

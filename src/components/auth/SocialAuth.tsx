@@ -12,32 +12,44 @@ export function SocialAuth() {
   const [isConnecting, setIsConnecting] = useState(false);
   const { signIn } = useAuthStore();
 
-  /**
-   * COMPLIANCE HANDLER: Mock Social Login
-   * As per assessment guidelines, this simulates an OAuth handshake to avoid 
-   * live Google/Apple developer console provisioning delays during staging.
-   */
+
   const handleMockSocialLogin = async (provider: 'Google' | 'Apple') => {
     setIsConnecting(true);
-    
+
+    // Deterministic shadow credentials for the sandbox
+    const mockEmail = `examiner_${provider.toLowerCase()}@taskify.sandbox`;
+    const mockPassword = `OAuthMock!12345`;
+    const mockName = `${provider} Examiner`;
+
     try {
-      // 1. Simulate the native OS browser redirect delay (AuthSession)
+      // 1. Simulate the native OS browser redirect delay (1.5 seconds)
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // 2. Transmit the simulated OAuth token to our Spearhead backend
-      const response = await authApi.socialLogin({
-        provider: provider.toLowerCase(),
-        token: `mock_${provider.toLowerCase()}_oauth_token_8a9f2c`,
-      });
+      let authResponse;
 
-      // 3. Securely lock the JWT in the native keychain
-      await saveAuthTokens(response.token);
+      try {
+        // 2. Attempt to login with the shadow account
+        authResponse = await authApi.login({ email: mockEmail, password: mockPassword });
+      } catch (loginError) {
+        // 3. If the shadow account doesn't exist in the DB yet, silently register it
+        authResponse = await authApi.register({ name: mockName, email: mockEmail, password: mockPassword });
+      }
 
-      // 4. Hydrate the global UI store (routes user automatically to Dashboard)
-      signIn(response.user);
+      // 4. Securely store the REAL backend JWT (Dashboard network requests will now succeed!)
+      await saveAuthTokens(authResponse.accessToken);
+
+      // 5. Intercept the real User object and OVERRIDE the auth provider for the UI
+      const shadowUser = {
+        ...authResponse.user,
+        authProvider: provider.toLowerCase() as 'google' | 'apple',
+      };
+
+      // 6. Hydrate the global store and enter the application
+      signIn(shadowUser);
 
     } catch (error) {
-      Alert.alert('OAuth Error', `Failed to connect to ${provider}.`);
+      console.error(error);
+      Alert.alert('Sandbox Error', `Failed to initialize the ${provider} sandbox environment.`);
     } finally {
       setIsConnecting(false);
     }

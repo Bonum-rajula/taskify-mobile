@@ -12,10 +12,8 @@ type StoreKey = typeof STORE_KEYS[keyof typeof STORE_KEYS];
 export async function setSecureItem(key: StoreKey, value: string): Promise<void> {
   try {
     if (Platform.OS === 'web') {
-      // Use standard browser storage for web testing
       localStorage.setItem(key, value);
     } else {
-      // Use encrypted native storage for iOS/Android
       await SecureStore.setItemAsync(key, value);
     }
   } catch (error) {
@@ -53,4 +51,16 @@ export async function clearAuthTokens(): Promise<void> {
     removeSecureItem(STORE_KEYS.ACCESS_TOKEN),
     removeSecureItem(STORE_KEYS.REFRESH_TOKEN),
   ]);
+}
+
+
+/**
+ * Standardized helper for SocialAuth and Standard Auth to securely store incoming JWTs.
+ * Preserves the existing generic setSecureItem architecture.
+ */
+export async function saveAuthTokens(accessToken: string, refreshToken?: string): Promise<void> {
+  await setSecureItem(STORE_KEYS.ACCESS_TOKEN, accessToken);
+  if (refreshToken) {
+    await setSecureItem(STORE_KEYS.REFRESH_TOKEN, refreshToken);
+  }
 }

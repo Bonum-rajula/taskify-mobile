@@ -29,16 +29,12 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    // If the backend rejects the token (expired, revoked, or invalid)
     if (error.response && error.response.status === 401) {
       console.warn('[API Client] 401 Unauthorized detected. Purging session.');
       
-      // Clear the native encrypted keychain
+      
       await clearAuthTokens();
       
-      // Instantly wipe the global state. 
-      // Because Expo Router can observe this state, this will automatically 
-      // kick the user back to the Login screen.
       useAuthStore.getState().signOut();
     }
     

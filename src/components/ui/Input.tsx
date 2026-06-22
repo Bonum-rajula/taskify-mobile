@@ -41,9 +41,9 @@ export function Input({
   // Determine the border color based on validation and interaction state
   let borderColor: string = theme.colors.border;
   if (error) {
-    borderColor = theme.colors.error; // Crimson validation error
+    borderColor = theme.colors.error; 
   } else if (isFocused) {
-    borderColor = theme.colors.primary; // Indigo active highlight
+    borderColor = theme.colors.primary;
   }
 
   return (
@@ -64,7 +64,7 @@ export function Input({
         style={[
           styles.input,
           { borderColor },
-          style, // Allow specific overrides (like height for multi-line text)
+          style,
         ]}
         placeholderTextColor={theme.colors.textMuted}
         onFocus={handleFocus}
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
   },
   label: {
     marginBottom: theme.spacing.xs,
-    fontWeight: '500', // A slight weight increase helps the label stand out
+    fontWeight: '500',
   },
   input: {
     height: 48,

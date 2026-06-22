@@ -40,7 +40,7 @@ export function TaskCard({ task, onPress }: TaskCardProps) {
       style={({ pressed }) => [
         styles.card,
         task.completed && styles.cardCompleted,
-        pressed && styles.cardPressed, // UX Upgrade: Tactile visual feedback on press
+        pressed && styles.cardPressed,
       ]}
       onPress={onPress}
     >

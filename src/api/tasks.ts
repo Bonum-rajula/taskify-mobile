@@ -29,7 +29,7 @@ export const tasksApi = {
    * Fetches all tasks for the currently authenticated user.
    */
   fetchTasks: async (): Promise<Task[]> => {
-    // Note: Assuming the backend returns an array directly or wraps it in { tasks: [] }
+    
     const response = await apiClient.get('/tasks');
     return response.data.tasks || response.data;
   },
